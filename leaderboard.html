@@ -1,58 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Leaderboard</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Shadow Escape</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h2>Leaderboard</h2>
+    <div class="glass-panel leaderboard-container">
+        <h2>Hall of Shadows</h2>
+        <p style="margin-bottom: 20px;">Top 10 Survivors</p>
 
-<ul id="leaderboard"></ul>
+        <div id="loadingIndicator" class="loading">Fetching scores...</div>
+        <p id="errorMsg" style="color: var(--danger); display: none;"></p>
 
-<a href="index.html">Back to Game</a>
+        <ul id="leaderboard" style="display: none;"></ul>
 
-<script type="module">
+        <a href="index.html">
+            <button style="margin-top: 20px;">Return to Game</button>
+        </a>
+    </div>
 
-import { db } from "./firebase.js";
+    <script type="module">
+        import { db } from "./firebase.js";
+        import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-collection,
-query,
-orderBy,
-limit,
-getDocs
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        async function loadLeaderboard() {
+            const list = document.getElementById("leaderboard");
+            const loading = document.getElementById("loadingIndicator");
+            const errorMsg = document.getElementById("errorMsg");
 
-async function loadLeaderboard(){
+            try {
+                const q = query(
+                    collection(db, "scores"),
+                    orderBy("score", "desc"),
+                    limit(10)
+                );
 
-const q = query(
-collection(db,"scores"),
-orderBy("score","desc"),
-limit(10)
-);
+                const snapshot = await getDocs(q);
 
-const snapshot = await getDocs(q);
+                loading.style.display = "none";
+                list.style.display = "block";
 
-const list = document.getElementById("leaderboard");
+                if (snapshot.empty) {
+                    list.innerHTML = "<p style='text-align:center; color: var(--text-muted);'>No scores yet. Be the first to survive!</p>";
+                    return;
+                }
 
-snapshot.forEach(doc=>{
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const li = document.createElement("li");
 
-const li = document.createElement("li");
+                    let rankText = "#" + rank;
+                    if (rank === 1) rankText = "🥇";
+                    if (rank === 2) rankText = "🥈";
+                    if (rank === 3) rankText = "🥉";
 
-li.innerText =
-doc.data().email + " : " + doc.data().score;
+                    li.innerHTML = `
+        <span class="rank">${rankText}</span>
+        <span class="email" title="${data.email}">${data.email.split('@')[0]}</span>
+        <span class="score-val">${data.score}</span>
+      `;
 
-list.appendChild(li);
+                    list.appendChild(li);
+                    rank++;
+                });
 
-});
+            } catch (err) {
+                loading.style.display = "none";
+                errorMsg.innerText = "Error loading leaderboard. " + err.message;
+                errorMsg.style.display = "block";
+                console.error(err);
+            }
+        }
 
-}
-
-loadLeaderboard();
-
-</script>
+        loadLeaderboard();
+    </script>
 
 </body>
+
 </html>

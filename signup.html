@@ -1,42 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Signup</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Shadow Escape</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h2>Signup</h2>
+    <div class="glass-panel">
+        <h2>Join the Escape</h2>
+        <p style="margin-bottom: 25px;">Create an account to save your scores.</p>
 
-<input type="email" id="email" placeholder="Email"><br><br>
-<input type="password" id="password" placeholder="Password"><br><br>
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Email Address" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Password (min 6 chars)" required>
+        </div>
 
-<button onclick="signup()">Signup</button>
+        <button id="signupBtn" onclick="signup()">Create Account</button>
 
-<p>
-Already have account?
-<a href="login.html">Login</a>
-</p>
+        <p id="errorMsg" style="color: var(--danger); margin-top: 15px; display: none;"></p>
 
-<script type="module">
-import { auth } from "./firebase.js";
-import { createUserWithEmailAndPassword }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        <p style="margin-top: 25px;">
+            Already have an account? <a href="login.html">Log in here</a>
+        </p>
+    </div>
 
-window.signup = function(){
+    <script type="module">
+        import { auth } from "./firebase.js";
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const email = document.getElementById("email").value;
-const password = document.getElementById("password").value;
+        window.signup = function () {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const errorMsg = document.getElementById("errorMsg");
+            const btn = document.getElementById("signupBtn");
 
-createUserWithEmailAndPassword(auth, email, password)
-.then(()=>{
-alert("Signup Successful");
-window.location.href="login.html";
-})
-.catch(err=>alert(err.message));
+            if (!email || !password) {
+                errorMsg.innerText = "Please fill in all fields.";
+                errorMsg.style.display = "block";
+                return;
+            }
 
-}
-</script>
+            btn.innerText = "Creating Account...";
+            btn.disabled = true;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    // Firebase auto-logs in on signup, redirect to index
+                    window.location.href = "index.html";
+                })
+                .catch(err => {
+                    errorMsg.innerText = err.message;
+                    errorMsg.style.display = "block";
+                    btn.innerText = "Create Account";
+                    btn.disabled = false;
+                });
+        }
+    </script>
 
 </body>
+
 </html>

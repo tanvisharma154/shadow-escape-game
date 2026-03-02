@@ -1,29 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Shadow Escape</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Escape: Smart Survival</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h2>Shadow Escape: Smart Survival</h2>
+    <div class="app-header" style="display: none;" id="headerEl">
+        <div class="user-info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span id="userEmail">Loading...</span>
+        </div>
+        <button class="btn-danger" id="logoutBtn" onclick="logout()">Logout</button>
+    </div>
 
-<div id="gameArea">
-    <div id="player"></div>
-    <div id="enemy"></div>
-</div>
+    <h2 style="margin-bottom: 5px;">Shadow Escape</h2>
+    <p style="margin-bottom: 20px;">Use ARROW KEYS to survive.</p>
 
-<h3>Score: <span id="score">0</span></h3>
+    <div class="score-board">
+        Score: <span id="score">0</span>
+    </div>
 
-<button id="restartBtn" onclick="restartGame()" style="display:none;">
-Restart Game
-</button>
+    <div id="gameArea">
+        <div id="player"></div>
+        <div id="enemy"></div>
+    </div>
 
-<br><br>
-<a href="leaderboard.html">View Leaderboard</a>
+    <button id="restartBtn" onclick="restartGame()">
+        Play Again
+    </button>
 
-<script type="module" src="script.js"></script>
+    <div style="margin-top: 30px;">
+        <a href="leaderboard.html">
+            <button
+                style="width: auto; padding: 10px 25px; background: rgba(30, 41, 59, 0.7); border: 1px solid var(--glass-border);">
+                🏆 View Leaderboard
+            </button>
+        </a>
+    </div>
+
+    <script type="module" src="script.js"></script>
 
 </body>
+
 </html>

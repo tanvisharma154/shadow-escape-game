@@ -1,105 +1,138 @@
 import { auth, db } from "./firebase.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-addDoc,
-collection
+// -- AUTH GUARD -- 
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        document.getElementById("userEmail").innerText = user.email;
+        document.getElementById("headerEl").style.display = "flex";
+    } else {
+        // Redirect to login if not authenticated
+        window.location.href = "login.html";
+    }
+});
+
+window.logout = function () {
+    signOut(auth).then(() => {
+        window.location.href = "login.html";
+    }).catch((error) => {
+        console.error("Sign out error", error);
+    });
 }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// -- GAME LOGIC --
 const player = document.getElementById("player");
 const enemy = document.getElementById("enemy");
 const scoreDisplay = document.getElementById("score");
 
-let playerX=50;
-let playerY=50;
+let playerX = 50;
+let playerY = 50;
 
-let enemyX=300;
-let enemyY=200;
+let enemyX = 300;
+let enemyY = 200;
 
-let score=0;
-let gameOver=false;
+let score = 0;
+let gameOver = false;
+let gameIntervals = [];
 
-document.addEventListener("keydown",(e)=>{
+document.addEventListener("keydown", (e) => {
+    if (gameOver) return;
 
-if(gameOver)return;
+    // Prevent default scrolling for arrow keys
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+        e.preventDefault();
+    }
 
-if(e.key==="ArrowUp")playerY-=10;
-if(e.key==="ArrowDown")playerY+=10;
-if(e.key==="ArrowLeft")playerX-=10;
-if(e.key==="ArrowRight")playerX+=10;
+    // Define speed and boundaries (assuming gameArea is 600x400 and elements are 20px)
+    const speed = 15;
+    const maxW = 600 - 20;
+    const maxH = 400 - 20;
 
-update();
+    if (e.key === "ArrowUp") playerY = Math.max(0, playerY - speed);
+    if (e.key === "ArrowDown") playerY = Math.min(maxH, playerY + speed);
+    if (e.key === "ArrowLeft") playerX = Math.max(0, playerX - speed);
+    if (e.key === "ArrowRight") playerX = Math.min(maxW, playerX + speed);
 
+    update();
 });
 
-function update(){
-player.style.left=playerX+"px";
-player.style.top=playerY+"px";
-enemy.style.left=enemyX+"px";
-enemy.style.top=enemyY+"px";
+function update() {
+    player.style.left = playerX + "px";
+    player.style.top = playerY + "px";
+    enemy.style.left = enemyX + "px";
+    enemy.style.top = enemyY + "px";
 }
 
-function moveEnemy(){
+function moveEnemy() {
+    if (gameOver) return;
 
-if(gameOver)return;
+    // Enemy follows player slightly slower
+    const enemySpeed = 2.5;
 
-if(enemyX<playerX)enemyX+=2;
-if(enemyX>playerX)enemyX-=2;
+    if (enemyX < playerX) enemyX += enemySpeed;
+    if (enemyX > playerX) enemyX -= enemySpeed;
+    if (enemyY < playerY) enemyY += enemySpeed;
+    if (enemyY > playerY) enemyY -= enemySpeed;
 
-if(enemyY<playerY)enemyY+=2;
-if(enemyY>playerY)enemyY-=2;
-
-checkCollision();
-
-update();
-
+    checkCollision();
+    update();
 }
 
-function checkCollision(){
-
-if(
-Math.abs(playerX-enemyX)<20 &&
-Math.abs(playerY-enemyY)<20
-){
-endGame();
+function checkCollision() {
+    // Hitbox distance
+    if (Math.abs(playerX - enemyX) < 20 && Math.abs(playerY - enemyY) < 20) {
+        endGame();
+    }
 }
 
+function increaseScore() {
+    if (gameOver) return;
+    score++;
+    scoreDisplay.innerText = score;
 }
 
-function increaseScore(){
+async function endGame() {
+    gameOver = true;
 
-if(gameOver)return;
+    // Stop intervals
+    gameIntervals.forEach(clearInterval);
 
-score++;
-scoreDisplay.innerText=score;
+    player.style.background = "#555";
+    player.style.boxShadow = "none";
+    enemy.style.background = "#fff";
+    enemy.style.boxShadow = "none";
 
+    document.getElementById("restartBtn").style.display = "block";
+    document.getElementById("restartBtn").innerText = "Saving Score...";
+    document.getElementById("restartBtn").disabled = true;
+
+    if (currentUser) {
+        try {
+            await addDoc(collection(db, "scores"), {
+                email: currentUser.email,
+                score: score,
+                time: Date.now()
+            });
+            document.getElementById("restartBtn").innerText = "Play Again";
+            document.getElementById("restartBtn").disabled = false;
+        } catch (err) {
+            console.error("Error saving score: ", err);
+            document.getElementById("restartBtn").innerText = "Play Again (Score not saved)";
+            document.getElementById("restartBtn").disabled = false;
+        }
+    }
 }
 
-async function endGame(){
-
-gameOver=true;
-
-document.getElementById("restartBtn").style.display="block";
-
-const user=auth.currentUser;
-
-if(user){
-
-await addDoc(collection(db,"scores"),{
-email:user.email,
-score:score,
-time:Date.now()
-});
-
+window.restartGame = function () {
+    location.reload();
 }
 
-}
-
-window.restartGame=function(){
-location.reload();
-}
-
-setInterval(moveEnemy,50);
-setInterval(increaseScore,1000);
+// Start game loops
+gameIntervals.push(setInterval(moveEnemy, 30));
+gameIntervals.push(setInterval(increaseScore, 1000));
 
 update();
