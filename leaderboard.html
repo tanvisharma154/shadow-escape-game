@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Leaderboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Leaderboard</h2>
+
+<ul id="leaderboard"></ul>
+
+<a href="index.html">Back to Game</a>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+collection,
+query,
+orderBy,
+limit,
+getDocs
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+async function loadLeaderboard(){
+
+const q = query(
+collection(db,"scores"),
+orderBy("score","desc"),
+limit(10)
+);
+
+const snapshot = await getDocs(q);
+
+const list = document.getElementById("leaderboard");
+
+snapshot.forEach(doc=>{
+
+const li = document.createElement("li");
+
+li.innerText =
+doc.data().email + " : " + doc.data().score;
+
+list.appendChild(li);
+
+});
+
+}
+
+loadLeaderboard();
+
+</script>
+
+</body>
+</html>
